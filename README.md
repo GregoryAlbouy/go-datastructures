@@ -1,3 +1,5 @@
+[![Go Report Card](https://goreportcard.com/badge/github.com/gregoryalbouy/go-datastructures)](https://goreportcard.com/report/github.com/gregoryalbouy/go-datastructures)
+  
 # go-datastructures
 
 Modest attempt at implementing common datastructure in Go.

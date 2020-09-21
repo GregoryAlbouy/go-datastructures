@@ -10,17 +10,17 @@ import (
 func TestBSTInsert(t *testing.T) {
 	tree := newTestBST()
 	expected := &binarySearchTree{
-		Root: &node{
+		Root: &treeNode{
 			Value: 0,
-			Left: &node{
+			Left: &treeNode{
 				Value: -10,
-				Left:  &node{Value: -15},
-				Right: &node{Value: -5},
+				Left:  &treeNode{Value: -15},
+				Right: &treeNode{Value: -5},
 			},
-			Right: &node{
+			Right: &treeNode{
 				Value: 10,
-				Left:  &node{Value: 5},
-				Right: &node{Value: 15},
+				Left:  &treeNode{Value: 5},
+				Right: &treeNode{Value: 15},
 			},
 		},
 	}

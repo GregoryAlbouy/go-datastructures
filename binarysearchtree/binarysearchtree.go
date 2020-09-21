@@ -12,24 +12,24 @@ type Tree interface {
 	Has(v float64) bool
 	JSON() (string, error)
 
-	root() *node
-	traverseInOrder(acc *[]float64, curr *node)
-	traversePreOrder(acc *[]float64, curr *node)
-	traversePostOrder(acc *[]float64, curr *node)
+	root() *treeNode
+	traverseInOrder(acc *[]float64, curr *treeNode)
+	traversePreOrder(acc *[]float64, curr *treeNode)
+	traversePostOrder(acc *[]float64, curr *treeNode)
 }
 
-type node struct {
-	Value float64 `json:"value"`
-	Left  *node   `json:"left,omitempty"`
-	Right *node   `json:"right,omitempty"`
+type treeNode struct {
+	Value float64   `json:"value"`
+	Left  *treeNode `json:"left,omitempty"`
+	Right *treeNode `json:"right,omitempty"`
 }
 
-func newNode(v float64) *node {
-	return &node{v, nil, nil}
+func newNode(v float64) *treeNode {
+	return &treeNode{v, nil, nil}
 }
 
 type binarySearchTree struct {
-	Root *node `json:"root"`
+	Root *treeNode `json:"root"`
 }
 
 // New returns a binary search tree.
@@ -47,22 +47,23 @@ func (t *binarySearchTree) Insert(v float64) bool {
 
 	for curr := t.Root; curr != nil; {
 		diff := node.Value - curr.Value
-		if diff < 0 {
-			if curr.Left == nil {
-				curr.Left = node
-				return true
-			}
-			curr = curr.Left
-		} else if diff > 0 {
-			if curr.Right == nil {
-				curr.Right = node
-				return true
-			}
-			curr = curr.Right
-		} else {
-			break
+		if diff == 0 {
+			return false
 		}
+
+		child := &curr.Left
+		if diff > 0 {
+			child = &curr.Right
+		}
+
+		if *child == nil {
+			*child = node
+			return true
+		}
+
+		curr = *child
 	}
+
 	return false
 }
 
@@ -90,7 +91,7 @@ func (t *binarySearchTree) JSON() (string, error) {
 	return string(b), nil
 }
 
-func (t *binarySearchTree) root() *node {
+func (t *binarySearchTree) root() *treeNode {
 	return t.Root
 }
 
@@ -109,7 +110,7 @@ func SliceOfBFS(t Tree) []float64 {
 	q.Enqueue(curr)
 
 	for q.First() != nil {
-		curr := q.Dequeue().(*node)
+		curr := q.Dequeue().(*treeNode)
 		v := curr.Value
 		slice = append(slice, v)
 		if curr.Left != nil {

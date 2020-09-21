@@ -1,7 +1,7 @@
 package binarysearchtree
 
 type traverseMethod int
-type traverseFunc func(*[]float64, *node)
+type traverseFunc func(*[]float64, *treeNode)
 type traverseMap map[traverseMethod]traverseFunc
 
 const (
@@ -29,7 +29,7 @@ func SliceOfDFS(t Tree, method traverseMethod) []float64 {
 	return slice
 }
 
-func (t *binarySearchTree) traverseInOrder(acc *[]float64, curr *node) {
+func (t *binarySearchTree) traverseInOrder(acc *[]float64, curr *treeNode) {
 	if curr.Left != nil {
 		t.traverseInOrder(acc, curr.Left)
 	}
@@ -39,7 +39,7 @@ func (t *binarySearchTree) traverseInOrder(acc *[]float64, curr *node) {
 	}
 }
 
-func (t *binarySearchTree) traversePreOrder(acc *[]float64, curr *node) {
+func (t *binarySearchTree) traversePreOrder(acc *[]float64, curr *treeNode) {
 	*acc = append(*acc, curr.Value)
 	if curr.Left != nil {
 		t.traversePreOrder(acc, curr.Left)
@@ -49,7 +49,7 @@ func (t *binarySearchTree) traversePreOrder(acc *[]float64, curr *node) {
 	}
 }
 
-func (t *binarySearchTree) traversePostOrder(acc *[]float64, curr *node) {
+func (t *binarySearchTree) traversePostOrder(acc *[]float64, curr *treeNode) {
 	if curr.Left != nil {
 		t.traversePostOrder(acc, curr.Left)
 	}

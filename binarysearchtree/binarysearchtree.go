@@ -42,6 +42,7 @@ func (t *binarySearchTree) Insert(v float64) bool {
 
 	if t.Root == nil {
 		t.Root = node
+		return true
 	}
 
 	for curr := t.Root; curr != nil; {

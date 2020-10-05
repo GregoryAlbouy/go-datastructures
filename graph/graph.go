@@ -2,81 +2,179 @@ package graph
 
 // Work in progress
 
-import "fmt"
-
-type vertex interface{}
-
-type adjacencyList map[vertex][]vertex
+type adjacencyList map[string]*vertex
 
 type graph struct {
-	adjacencyList adjacencyList
+	data          adjacencyList
+	isDirected    bool
+	defaultWeight int
 }
 
 // Interface of a graph
 type Interface interface {
-	AddVertex(v vertex)
-	AddEdge(v1, v2 vertex)
-	RemoveEdge(v1, v2 vertex)
-	RemoveVertex(v vertex)
+	SetDirected(b bool) Interface
+	SetDefaultWeight(v int) Interface
+	Clear() Interface
 
-	debug()
+	Add(id string, value interface{}) bool
+	AddMany(vertices ...struct {
+		id    string
+		value interface{}
+	})
+	Has(id string) bool
+	Get(id string) *vertex
+	Remove(id string) bool
+	ResetVertex(id string) bool
+
+	GetEdge(from, to string) *edge
+	AddEdge(from, to string, weight ...int) bool
+	RemoveEdge(from, to string) bool
+	GetEdgeWeight(from, to string) int
+	SetEdgeWeight(from, to string, weight int) bool
+
+	// debug()
 }
 
 // New returns a graph
 func New() Interface {
-	return &graph{map[vertex][]vertex{}}
+	return (&graph{}).
+		SetDirected(false).
+		SetDefaultWeight(1).
+		Clear()
 }
 
-func (g *graph) AddVertex(v vertex) {
-	_, exists := g.adjacencyList[v]
-	if !exists {
-		g.adjacencyList[v] = []vertex{}
+func (g *graph) SetDirected(b bool) Interface {
+	g.isDirected = b
+	return g
+}
+
+func (g *graph) SetDefaultWeight(v int) Interface {
+	g.defaultWeight = v
+	return g
+}
+
+func (g *graph) Clear() Interface {
+	g.data = adjacencyList{}
+	return g
+}
+
+func (g *graph) Add(id string, v interface{}) bool {
+	if g.Has(id) {
+		return false
+	}
+	g.data[id] = newVertex(id, v)
+	return true
+}
+
+func (g *graph) AddMany(vertices ...struct {
+	id    string
+	value interface{}
+}) {
+	for _, v := range vertices {
+		g.Add(v.id, v.value)
 	}
 }
 
-func (g *graph) AddEdge(v1, v2 vertex) {
-	g.adjacencyList[v1] = append(g.adjacencyList[v1], v2)
-	g.adjacencyList[v2] = append(g.adjacencyList[v2], v1)
+func (g graph) Has(id string) bool {
+	_, exists := g.data[id]
+	return exists
 }
 
-func (g *graph) RemoveEdge(v1, v2 vertex) {
-	_, v1Exists := g.adjacencyList[v1]
-	_, v2Exists := g.adjacencyList[v2]
-
-	if !v1Exists || !v2Exists {
-		return
+func (g graph) Get(id string) *vertex {
+	if !g.Has(id) {
+		return nil
 	}
-
-	g.adjacencyList[v1] = findAndRemove(g.adjacencyList[v1], v2)
-	g.adjacencyList[v2] = findAndRemove(g.adjacencyList[v2], v1)
+	return g.data[id]
 }
 
-func (g *graph) RemoveVertex(v vertex) {
-	_, exists := g.adjacencyList[v]
-
-	if !exists {
-		return
+func (g *graph) Remove(id string) bool {
+	if !g.Has(id) {
+		return false
 	}
-
-	delete(g.adjacencyList, v)
-
-	for vertex := range g.adjacencyList {
-		g.adjacencyList[vertex] = findAndRemove(g.adjacencyList[vertex], v)
+	delete(g.data, id)
+	for _, v := range g.data {
+		v.removeEdge(id)
 	}
+	return true
 }
 
-func (g graph) debug() {
-	fmt.Printf("%+v\n", g.adjacencyList)
+func (g *graph) ResetVertex(id string) bool {
+	if v := g.Get(id); v != nil {
+		return g.Remove(v.id) && g.Add(v.id, v.value)
+	}
+	return false
 }
 
-func findAndRemove(edgeList []vertex, v vertex) []vertex {
-	newEdgeList := []vertex{}
-
-	for _, edge := range edgeList {
-		if edge != v {
-			newEdgeList = append(newEdgeList, edge)
-		}
+func (g *graph) AddEdge(from, to string, weight ...int) bool {
+	w := g.defaultWeight
+	if len(weight) > 0 {
+		w = weight[0]
 	}
 
-	return newEdgeList
+	src, dst, isSafeAdd, _ := g.checkEdgeOps(from, to)
+
+	if !isSafeAdd {
+		return false
+	}
+
+	srcAdded := src.addEdge(newEdge(from, to, w))
+	if g.isDirected {
+		return srcAdded
+	}
+
+	dstAdded := dst.addEdge(newEdge(to, from, w))
+	return srcAdded && dstAdded
+}
+
+func (g *graph) RemoveEdge(from, to string) bool {
+	src, dst, _, isSafeRem := g.checkEdgeOps(from, to)
+
+	if !isSafeRem {
+		return false
+	}
+
+	srcRemoved := src.removeEdge(to)
+	if g.isDirected {
+		return srcRemoved
+	}
+
+	dstRemoved := dst.removeEdge(from)
+	return srcRemoved && dstRemoved
+}
+
+func (g graph) GetEdge(from, to string) *edge {
+	v := g.Get(from)
+	if v == nil {
+		return nil
+	}
+	return v.getEdge(to)
+}
+
+func (g *graph) SetEdgeWeight(from, to string, weight int) bool {
+	if e := g.GetEdge(from, to); e != nil {
+		e.weight = weight
+		return true
+	}
+	return false
+}
+
+func (g graph) GetEdgeWeight(from, to string) int {
+	if e := g.GetEdge(from, to); e != nil {
+		return e.weight
+	}
+	return 0
+}
+
+func (g graph) checkEdgeOps(from, to string) (*vertex, *vertex, bool, bool) {
+	src := g.Get(from)
+	dst := g.Get(to)
+	bothExist := src != nil && dst != nil
+	isSafeAdd := bothExist &&
+		!src.hasEdge(to) &&
+		(!dst.hasEdge(from) || g.isDirected)
+	isSafeRem := bothExist &&
+		src.hasEdge(to) &&
+		(dst.hasEdge(from) || g.isDirected)
+
+	return src, dst, isSafeAdd, isSafeRem
 }

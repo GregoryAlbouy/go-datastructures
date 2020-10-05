@@ -11,5 +11,5 @@ _Work in progress._
 * Queue
 * Stack
 * Binary Search Tree
-* Heaps (_in progress_)
+* Binary Heap
 * Graphs (_in progress_)

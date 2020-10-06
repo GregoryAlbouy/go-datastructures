@@ -9,14 +9,14 @@ type priorityQueue struct {
 // Interface for priority queue
 type Interface interface {
 	Len() int
-	Enqueue(value interface{}, priority int) Interface
+	Enqueue(value interface{}, priority float64) Interface
 	Dequeue() interface{}
 	Peek() interface{}
 }
 
 type node struct {
 	value    interface{}
-	priority int
+	priority float64
 }
 
 // New returns a Priority Queue
@@ -56,7 +56,7 @@ func (q priorityQueue) Len() int {
 	return q.data.Len()
 }
 
-func (q *priorityQueue) Enqueue(v interface{}, p int) Interface {
+func (q *priorityQueue) Enqueue(v interface{}, p float64) Interface {
 	q.data.Insert(node{v, p})
 	return q
 }

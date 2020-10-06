@@ -38,6 +38,20 @@ func New() Interface {
 	return q
 }
 
+// SliceOf returns a slice of a Priority Queue values.
+func SliceOf(queue Interface) []interface{} {
+	q := queue.(*priorityQueue)
+	nodes := q.data.ToSlice()
+	values := []interface{}{}
+
+	for _, v := range nodes {
+		node := v.(node)
+		values = append(values, node.value)
+	}
+
+	return values
+}
+
 func (q priorityQueue) Len() int {
 	return q.data.Len()
 }
@@ -48,11 +62,17 @@ func (q *priorityQueue) Enqueue(v interface{}, p int) Interface {
 }
 
 func (q *priorityQueue) Dequeue() interface{} {
+	if q.Len() == 0 {
+		return nil
+	}
 	node := q.data.Shift().(node)
 	return node.value
 }
 
 func (q priorityQueue) Peek() interface{} {
+	if q.Len() == 0 {
+		return nil
+	}
 	node := q.data.Peek().(node)
 	return node.value
 }

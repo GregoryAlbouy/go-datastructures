@@ -14,16 +14,27 @@ type Interface interface {
 	Peek() interface{}
 }
 
-type node struct {
+// Node is a priority queue elements It has a value and a priority.
+type Node struct {
 	value    interface{}
 	priority float64
+}
+
+// Value returns the value of the node.
+func (n Node) Value() interface{} {
+	return n.value
+}
+
+// Priority returns the priority of the node.
+func (n Node) Priority() float64 {
+	return n.priority
 }
 
 // New returns a Priority Queue
 func New() Interface {
 	minCompareFunc := func(A, B interface{}) int {
-		a := A.(node)
-		b := B.(node)
+		a := A.(Node)
+		b := B.(Node)
 
 		if a.priority < b.priority {
 			return 1
@@ -45,8 +56,8 @@ func SliceOf(queue Interface) []interface{} {
 	values := []interface{}{}
 
 	for _, v := range nodes {
-		node := v.(node)
-		values = append(values, node.value)
+		node := v.(Node)
+		values = append(values, node.Value)
 	}
 
 	return values
@@ -57,7 +68,7 @@ func (q priorityQueue) Len() int {
 }
 
 func (q *priorityQueue) Enqueue(v interface{}, p float64) Interface {
-	q.data.Insert(node{v, p})
+	q.data.Insert(Node{v, p})
 	return q
 }
 
@@ -65,14 +76,14 @@ func (q *priorityQueue) Dequeue() interface{} {
 	if q.Len() == 0 {
 		return nil
 	}
-	node := q.data.Shift().(node)
-	return node.value
+	node := q.data.Shift().(Node)
+	return node.Value
 }
 
 func (q priorityQueue) Peek() interface{} {
 	if q.Len() == 0 {
 		return nil
 	}
-	node := q.data.Peek().(node)
-	return node.value
+	node := q.data.Peek().(Node)
+	return node.Value
 }

@@ -39,6 +39,7 @@ type Interface interface {
 	Insert(v interface{}) Interface
 	InsertMany(values ...interface{}) Interface
 	Shift() interface{}
+	Peek() interface{}
 	Clear() Interface
 	ToSlice() []interface{}
 	SetCompareFunc(f compare.Func) Interface
@@ -96,6 +97,10 @@ func (h *binaryHeap) Shift() interface{} {
 func (h *binaryHeap) Clear() Interface {
 	h.values = []interface{}{}
 	return h
+}
+
+func (h binaryHeap) Peek() interface{} {
+	return h.values[0]
 }
 
 func (h *binaryHeap) siftUp() {

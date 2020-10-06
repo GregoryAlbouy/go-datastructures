@@ -23,22 +23,33 @@ func TestPQDequeue(t *testing.T) {
 		{
 			Desc:     "empty",
 			Input:    New(),
-			Expected: nil,
+			Expected: []interface{}{nil, nil, nil, nil},
 		}, {
 			Desc:     "regular value",
 			Input:    New().Enqueue("0", 100),
-			Expected: "0",
+			Expected: []interface{}{"0", nil, nil, nil},
 		}, {
 			Desc:     "negative priorities",
 			Input:    New().Enqueue("1", -1).Enqueue("0", -2).Enqueue("2", 1),
-			Expected: "0",
+			Expected: []interface{}{"0", "1", "2", nil},
 		},
 	}
 
 	for _, tc := range testcases {
 		q := tc.Input.(Interface)
-		gotPeek := q.Peek()
-		gotDequeue := q.Dequeue()
+		gotPeek := []interface{}{}
+		gotDequeue := []interface{}{}
+
+		for i := 0; i < 4; i++ {
+			n0 := q.Len()
+			gotPeek = append(gotPeek, q.Peek())
+			gotDequeue = append(gotDequeue, q.Dequeue())
+			n1 := q.Len()
+
+			if !(n1 == n0-1 || n0 == 0) {
+				t.Errorf(".Len(): expected %v, got %v", n0-1, n1)
+			}
+		}
 
 		testx.Check(t, tc, gotPeek)
 		testx.Check(t, tc, gotDequeue)

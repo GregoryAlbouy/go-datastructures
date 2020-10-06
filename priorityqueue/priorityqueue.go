@@ -57,7 +57,7 @@ func SliceOf(queue Interface) []interface{} {
 
 	for _, v := range nodes {
 		node := v.(Node)
-		values = append(values, node.Value)
+		values = append(values, node.value)
 	}
 
 	return values
@@ -77,7 +77,7 @@ func (q *priorityQueue) Dequeue() interface{} {
 		return nil
 	}
 	node := q.data.Shift().(Node)
-	return node.Value
+	return node.value
 }
 
 func (q priorityQueue) Peek() interface{} {
@@ -85,5 +85,5 @@ func (q priorityQueue) Peek() interface{} {
 		return nil
 	}
 	node := q.data.Peek().(Node)
-	return node.Value
+	return node.value
 }

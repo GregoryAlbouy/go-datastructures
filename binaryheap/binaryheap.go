@@ -100,6 +100,9 @@ func (h *binaryHeap) Clear() Interface {
 }
 
 func (h binaryHeap) Peek() interface{} {
+	if h.Len() == 0 {
+		return nil
+	}
 	return h.values[0]
 }
 

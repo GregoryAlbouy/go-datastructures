@@ -1,15 +1,17 @@
 package graph
 
 import (
+	"fmt"
 	"math"
 
 	pqueue "github.com/gregoryalbouy/go-datastructures/priorityqueue"
 	"github.com/gregoryalbouy/go-datastructures/queue"
 )
 
-// Work in progress
+type adjacencyList map[string]*Vertex
 
-type adjacencyList map[string]*vertex
+// FilterFunc type
+type FilterFunc func(v Vertex) bool
 
 type graph struct {
 	data          adjacencyList
@@ -29,19 +31,19 @@ type Interface interface {
 		value interface{}
 	})
 	Has(id string) bool
-	Get(id string) *vertex
+	Get(id string) *Vertex
 	Remove(id string) bool
 	ResetVertex(id string) bool
 
-	GetEdge(from, to string) *edge
+	GetEdge(from, to string) *Edge
 	AddEdge(from, to string, weight ...float64) bool
 	RemoveEdge(from, to string) bool
 	GetEdgeWeight(from, to string) float64
 	SetEdgeWeight(from, to string, weight float64) bool
 
-	ShortestPath(from, to string) []*vertex
-	GoDFS(from string, f func(v vertex) interface{})
-	GoBFS(from string, f func(v vertex) interface{})
+	ShortestPath(from, to string, f ...FilterFunc) []*Vertex
+	GoDFS(from string, f func(v Vertex) interface{})
+	GoBFS(from string, f func(v Vertex) interface{})
 }
 
 // New returns a graph
@@ -89,7 +91,7 @@ func (g graph) Has(id string) bool {
 	return exists
 }
 
-func (g graph) Get(id string) *vertex {
+func (g graph) Get(id string) *Vertex {
 	if !g.Has(id) {
 		return nil
 	}
@@ -151,7 +153,7 @@ func (g *graph) RemoveEdge(from, to string) bool {
 	return srcRemoved && dstRemoved
 }
 
-func (g graph) GetEdge(from, to string) *edge {
+func (g graph) GetEdge(from, to string) *Edge {
 	v := g.Get(from)
 	if v == nil {
 		return nil
@@ -174,31 +176,24 @@ func (g graph) GetEdgeWeight(from, to string) float64 {
 	return 0
 }
 
-func (g graph) checkEdgeOps(from, to string) (*vertex, *vertex, bool, bool) {
-	src := g.Get(from)
-	dst := g.Get(to)
-	bothExist := src != nil && dst != nil
-	isSafeAdd := bothExist &&
-		!src.hasEdge(to) &&
-		(!dst.hasEdge(from) || g.isDirected)
-	isSafeRem := bothExist &&
-		src.hasEdge(to) &&
-		(dst.hasEdge(from) || g.isDirected)
-
-	return src, dst, isSafeAdd, isSafeRem
-}
-
-func (g graph) ShortestPath(from, to string) []*vertex {
+func (g graph) ShortestPath(from, to string, f ...FilterFunc) []*Vertex {
+	hasFilter := len(f) > 0
+	isExcluded := func(v *Vertex) bool { return hasFilter && !f[0](*v) }
 	seen := pqueue.New()
 	dist := map[string]float64{}
 	prev := map[string]string{}
-	path := []*vertex{}
+	path := []*Vertex{}
 
 	if g.Get(from) == nil || g.Get(to) == nil {
 		return path
 	}
 
 	for id := range g.data {
+		if isExcluded(g.Get(id)) {
+			fmt.Println(id)
+			continue
+		}
+
 		if id == from {
 			dist[from] = 0
 			seen.Enqueue(from, 0)
@@ -206,6 +201,7 @@ func (g graph) ShortestPath(from, to string) []*vertex {
 			dist[id] = math.Inf(1)
 			seen.Enqueue(id, math.Inf(1))
 		}
+
 		prev[id] = ""
 	}
 
@@ -224,7 +220,11 @@ func (g graph) ShortestPath(from, to string) []*vertex {
 			break
 		}
 
-		g.Get(smallest).walkEdges(func(e edge) {
+		g.Get(smallest).walkEdges(func(e Edge) {
+			if isExcluded(g.Get(e.to)) {
+				return
+			}
+
 			if newDist := dist[smallest] + e.weight; newDist < dist[e.to] {
 				dist[e.to] = newDist
 				prev[e.to] = smallest
@@ -236,7 +236,7 @@ func (g graph) ShortestPath(from, to string) []*vertex {
 	return path
 }
 
-func (g graph) GoBFS(from string, f func(v vertex) interface{}) {
+func (g graph) GoBFS(from string, f func(Vertex) interface{}) {
 	if g.Get(from) == nil {
 		return
 	}
@@ -251,7 +251,7 @@ func (g graph) GoBFS(from string, f func(v vertex) interface{}) {
 		id := curr.(string)
 		vx := g.Get(id)
 
-		vx.walkEdges(func(e edge) {
+		vx.walkEdges(func(e Edge) {
 			if _, exists := done[e.to]; !exists {
 				seen.Enqueue(e.to)
 				done[e.to] = true
@@ -262,27 +262,10 @@ func (g graph) GoBFS(from string, f func(v vertex) interface{}) {
 	}
 }
 
-func (g graph) GoDFS(from string, f func(v vertex) interface{}) {
+func (g graph) GoDFS(from string, f func(Vertex) interface{}) {
 	if g.Get(from) == nil {
 		return
 	}
 	done := map[string]bool{}
 	dfsRecurse(g, from, f, done)
-}
-
-func dfsRecurse(g graph, id string, f func(v vertex) interface{}, done map[string]bool) {
-	vx := g.Get(id)
-
-	if vx == nil {
-		return
-	}
-
-	done[id] = true
-	f(*vx)
-
-	vx.walkEdges(func(e edge) {
-		if _, isDone := done[e.to]; !isDone {
-			dfsRecurse(g, id, f, done)
-		}
-	})
 }

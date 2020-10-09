@@ -12,20 +12,36 @@ func TestGraphAdd(t *testing.T) {
 }
 
 func TestGraphShortestPath(t *testing.T) {
-	tc := testx.Testcase{
-		Desc:     "standard path",
-		Input:    newTestDirectedGraph(),
-		Expected: []string{"A", "B", "C", "D", "E", "F"},
+	testcases := []testx.Testcase{
+		{
+			Desc:     "standard path",
+			Input:    newTestUndirectedGraph(),
+			Expected: []string{"A", "B", "C", "D", "E", "F"},
+		}, {
+			Desc:     "filtered path",
+			Input:    newTestUndirectedGraph(),
+			Expected: []string{"A", "D", "E", "F"},
+		},
 	}
-	path := tc.Input.(Interface).ShortestPath("A", "F")
-	got := func() (ids []string) {
-		for _, node := range path {
-			ids = append(ids, node.id)
-		}
-		return
-	}()
 
-	testx.Check(t, tc, got)
+	for _, tc := range testcases {
+		var path []*Vertex
+		if tc.Desc == "filtered path" {
+			path = tc.Input.(Interface).
+				ShortestPath("A", "F", func(v Vertex) bool { return v.id != "B" })
+		} else {
+			path = tc.Input.(Interface).ShortestPath("A", "F")
+		}
+		got := func() (ids []string) {
+			for _, node := range path {
+				ids = append(ids, node.id)
+			}
+			return
+		}()
+
+		testx.Check(t, tc, got)
+	}
+
 }
 
 // func TestGraphGoBFS(t *testing.T) {
